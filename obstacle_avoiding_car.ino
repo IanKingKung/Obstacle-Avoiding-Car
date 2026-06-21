@@ -16,6 +16,9 @@ const int leftInput2 = 7;
 const int buttonPin = 2;
 bool carActive = false;
 
+//car distance const
+const int carDistance = 20;
+
 
 void setup() {
   Serial.begin(9600); // Opens the serial port  (for testing purposes)
@@ -37,28 +40,65 @@ void setup() {
 }
 
 void loop() {
+  //carActive or not based on button logic
   if(digitalRead(buttonPin) == LOW) {
     carActive = !carActive;
 
-    // if(carActive) Serial.println("car active");
-    // else Serial.println("car NOT active");
-    delay(300);
+    if(carActive) Serial.println("car active");
+    else Serial.println("car NOT active");
+    delay(250);
   }
 
+  // if(carActive) {
+  //   rightTurn(90);
+  //   stop();
+  //   delay(1500);
+  //   leftTurn(90);
+  //   stop();
+  //   delay(1500);
+  // } else {
+  //   stop();
+  // }
+
+  //car is active
   if(carActive) {
+
     float distance = readDistance();
 
-    if (distance < 10) {
-      stop();
-    } else {
-      moveForward(140);
-    }
+    if (distance < carDistance) { //obstacle detected
+      
+      for(int i = 1; i < 5; i++) {
+        int degreeToTurn = 45 * i;  //how many degrees to turn
+        float newDistance;  //hold new distance when car turns
 
+        leftTurn(degreeToTurn, 150);
+        newDistance = readDistance();
+        if(newDistance >= carDistance) {
+          break;
+        }
+        delay(200);
+
+        rightTurn(degreeToTurn, 150); //reset
+        delay(200);
+
+        rightTurn(degreeToTurn, 150);
+        newDistance = readDistance();
+        if(newDistance >= carDistance) {
+          break;
+        }
+        delay(200);
+
+        leftTurn(degreeToTurn, 150); //reset
+        delay(200);
+      }
+      
+    } else {  //no obstacle detected
+      moveForward(160);
+    }
     delay(60);
-  } else {
+
+  } else { //car is not active
     stop();
   }
-  
-
   delay(60);
 }
