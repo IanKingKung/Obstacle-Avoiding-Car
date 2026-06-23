@@ -19,10 +19,11 @@ const int buttonPin = 2;
 bool carActive = false;
 
 //car distance const
-const int carDistance = 20;
+const int carDistance = 30;
+const int minDistance = 13;
 
 //servo control
-const int servoPin =3;
+const int servoPin = 3;
 Servo radarServo; //servo object
 
 
@@ -66,11 +67,16 @@ void loop() {
 
     float distance = readDistance();
 
-    if (distance < carDistance) { //obstacle detected
+    if (distance < carDistance && distance > minDistance) { //obstacle just detected
       stop();
-      discoverNewPath(distance);
+      discoverNewPath();
+    } else if (distance <= minDistance) { //obstacle too close i.e. reached a dead end
+      stop();
+      moveBackward(160);
+      delay(2000);
+      stop();
     } else {  //no obstacle detected
-      moveForward(160);
+      moveForward(170);
     }
     delay(60);
 
@@ -86,7 +92,7 @@ void loop() {
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
-void discoverNewPath(float oldDistance) {
+void discoverNewPath() {
     float leftDistance;
     float rightDistance;
 
@@ -112,16 +118,16 @@ void discoverNewPath(float oldDistance) {
       stop();
     } else if (rightDistance >= carDistance && leftDistance < carDistance) {
       //right direction is clear
-      rightTurn(45, 140);
+      rightTurn(45, 150);
     } else if (leftDistance >= carDistance && rightDistance < carDistance) {
       //left direction is clear
-      leftTurn(45, 140);
+      leftTurn(45, 150);
     } else {
       //both sides are clear, pick the better path
       if(leftDistance > rightDistance) {
-        leftTurn(45, 140);
+        leftTurn(45, 150);
       } else {
-        rightTurn(45, 140);
+        rightTurn(45, 150);
       }
     }
 
