@@ -27,6 +27,11 @@ void moveForward(int speed) {
   rightWheelForward(speed);
 }
 
+void moveBackward(int speed) {
+  leftWheelBackward(speed);
+  rightWheelBackward(speed);
+}
+
 void stop() {
   analogWrite(leftEnable, 0);
   analogWrite(rightEnable, 0);

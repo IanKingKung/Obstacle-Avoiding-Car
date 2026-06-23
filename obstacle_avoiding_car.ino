@@ -1,3 +1,5 @@
+#include <Servo.h>
+
 //ultrasonic sensor
 const int trigPin = 12;
 const int echoPin = 13;
@@ -19,6 +21,10 @@ bool carActive = false;
 //car distance const
 const int carDistance = 20;
 
+//servo control
+const int servoPin =3;
+Servo radarServo; //servo object
+
 
 void setup() {
   Serial.begin(9600); // Opens the serial port  (for testing purposes)
@@ -37,28 +43,23 @@ void setup() {
 
   //configure button
   pinMode(buttonPin, INPUT_PULLUP);
+
+  //configure the servo
+  radarServo.attach(servoPin);
+
+  
 }
 
 void loop() {
+
   //carActive or not based on button logic
   if(digitalRead(buttonPin) == LOW) {
     carActive = !carActive;
 
     if(carActive) Serial.println("car active");
     else Serial.println("car NOT active");
-    delay(250);
+    delay(200);   //DO NOT CHANGE, used for debouncing purposes
   }
-
-  // if(carActive) {
-  //   rightTurn(90);
-  //   stop();
-  //   delay(1500);
-  //   leftTurn(90);
-  //   stop();
-  //   delay(1500);
-  // } else {
-  //   stop();
-  // }
 
   //car is active
   if(carActive) {
@@ -66,32 +67,8 @@ void loop() {
     float distance = readDistance();
 
     if (distance < carDistance) { //obstacle detected
-      
-      for(int i = 1; i < 5; i++) {
-        int degreeToTurn = 45 * i;  //how many degrees to turn
-        float newDistance;  //hold new distance when car turns
-
-        leftTurn(degreeToTurn, 150);
-        newDistance = readDistance();
-        if(newDistance >= carDistance) {
-          break;
-        }
-        delay(200);
-
-        rightTurn(degreeToTurn, 150); //reset
-        delay(200);
-
-        rightTurn(degreeToTurn, 150);
-        newDistance = readDistance();
-        if(newDistance >= carDistance) {
-          break;
-        }
-        delay(200);
-
-        leftTurn(degreeToTurn, 150); //reset
-        delay(200);
-      }
-      
+      stop();
+      discoverNewPath(distance);
     } else {  //no obstacle detected
       moveForward(160);
     }
@@ -101,4 +78,51 @@ void loop() {
     stop();
   }
   delay(60);
+}
+
+
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+void discoverNewPath(float oldDistance) {
+    float leftDistance;
+    float rightDistance;
+
+    radarServo.write(90); //look straight
+    delay(600);
+
+    radarServo.write(45); //looks right
+    delay(600);
+    rightDistance = readDistance();
+
+    radarServo.write(135); //looks left
+    delay(600);
+    leftDistance = readDistance();
+
+    radarServo.write(90); //reset the servo
+    delay(600);
+
+    //movement cases
+    if(leftDistance <= carDistance && rightDistance <= carDistance) { 
+      //experience dead end, back up for a brief period
+      moveBackward(160);
+      delay(1000);
+      stop();
+    } else if (rightDistance >= carDistance && leftDistance < carDistance) {
+      //right direction is clear
+      rightTurn(45, 140);
+    } else if (leftDistance >= carDistance && rightDistance < carDistance) {
+      //left direction is clear
+      leftTurn(45, 140);
+    } else {
+      //both sides are clear, pick the better path
+      if(leftDistance > rightDistance) {
+        leftTurn(45, 140);
+      } else {
+        rightTurn(45, 140);
+      }
+    }
+
 }
